@@ -1,0 +1,735 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --accent: #00d4a1;
+  --accent2: #ff6b35;
+  --accent3: #4f8ef7;
+  --bg: var(--color-background-tertiary);
+  --card: var(--color-background-primary);
+  --border: var(--color-border-tertiary);
+  --text: var(--color-text-primary);
+  --muted: var(--color-text-secondary);
+}
+body { font-family: var(--font-sans); }
+.app { padding: 0 0 2rem; }
+.header { padding: 1.5rem 0 1rem; border-bottom: 0.5px solid var(--border); margin-bottom: 1.5rem; }
+.header h1 { font-size: 20px; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 10px; }
+.header p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.badge { background: #00d4a1; color: #003d2e; font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 20px; }
+.nav { display: flex; gap: 6px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.nav-btn { padding: 7px 14px; font-size: 13px; border: 0.5px solid var(--border); background: var(--card); color: var(--muted); border-radius: var(--border-radius-md); cursor: pointer; transition: all 0.15s; }
+.nav-btn:hover { border-color: #00d4a1; color: var(--text); }
+.nav-btn.active { background: #00d4a1; border-color: #00d4a1; color: #003d2e; font-weight: 500; }
+.page { display: none; }
+.page.active { display: block; }
+
+/* Indikator cards */
+.ind-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+.ind-card { background: var(--card); border: 0.5px solid var(--border); border-radius: var(--border-radius-lg); padding: 14px 16px; cursor: pointer; transition: all 0.15s; }
+.ind-card:hover { border-color: #00d4a1; }
+.ind-card.active { border-color: #00d4a1; border-width: 1.5px; }
+.ind-card .label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.ind-card .name { font-size: 15px; font-weight: 500; color: var(--text); }
+.ind-card .desc { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.ind-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 15px; margin-bottom: 8px; }
+
+.detail-panel { background: var(--card); border: 0.5px solid var(--border); border-radius: var(--border-radius-lg); padding: 20px; }
+.detail-title { font-size: 18px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.detail-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.zones-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px; }
+.zones-table th { font-weight: 500; color: var(--muted); text-align: left; padding: 6px 10px; background: var(--color-background-secondary); }
+.zones-table td { padding: 8px 10px; border-top: 0.5px solid var(--border); color: var(--text); }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+.pill-green { background: #eaf3de; color: #3b6d11; }
+.pill-red { background: #fcebeb; color: #a32d2d; }
+.pill-yellow { background: #faeeda; color: #854f0b; }
+.pill-blue { background: #e6f1fb; color: #185fa5; }
+.signal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.signal-box { padding: 12px; border-radius: var(--border-radius-md); font-size: 13px; }
+.signal-buy { background: #eaf3de; border: 0.5px solid #c0dd97; }
+.signal-sell { background: #fcebeb; border: 0.5px solid #f7c1c1; }
+.signal-box .stitle { font-weight: 500; font-size: 12px; margin-bottom: 6px; }
+.signal-buy .stitle { color: #3b6d11; }
+.signal-sell .stitle { color: #a32d2d; }
+.signal-box ul { padding-left: 14px; color: var(--text); line-height: 1.7; }
+
+/* RSI Visualizer */
+.rsi-bar-wrap { position: relative; height: 48px; border-radius: var(--border-radius-md); overflow: hidden; margin: 16px 0; }
+.rsi-bar-bg { position: absolute; inset: 0; display: flex; }
+.rsi-seg { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; }
+.rsi-needle { position: absolute; top: 0; bottom: 0; width: 3px; background: var(--text); border-radius: 2px; transform: translateX(-50%); transition: left 0.4s; }
+.rsi-needle::after { content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--text); }
+.rsi-val-display { text-align: center; font-size: 28px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.rsi-status { text-align: center; font-size: 13px; margin-bottom: 16px; }
+input[type=range] { width: 100%; }
+.slider-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* MACD */
+.macd-vis { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 16px; margin: 16px 0; }
+.macd-lines { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.macd-stat { font-size: 13px; }
+.macd-stat span { font-weight: 500; }
+.hist-bars { display: flex; align-items: flex-end; gap: 3px; height: 60px; margin-top: 8px; }
+.hist-bar { flex: 1; border-radius: 2px 2px 0 0; min-height: 2px; transition: height 0.3s, background 0.3s; }
+
+/* BB Visualizer */
+.bb-chart { position: relative; height: 140px; margin: 16px 0; }
+.bb-svg { width: 100%; height: 100%; }
+
+/* Kombinator */
+.combo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.combo-item { background: var(--card); border: 0.5px solid var(--border); border-radius: var(--border-radius-md); padding: 12px; }
+.combo-item label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; color: var(--text); }
+.combo-item input[type=checkbox] { width: 16px; height: 16px; accent-color: #00d4a1; }
+.score-bar { height: 8px; background: var(--color-background-secondary); border-radius: 4px; overflow: hidden; margin: 8px 0; }
+.score-fill { height: 100%; border-radius: 4px; transition: width 0.4s, background 0.4s; }
+.score-text { font-size: 22px; font-weight: 500; color: var(--text); }
+.score-label { font-size: 13px; color: var(--muted); }
+.verdict { padding: 12px 16px; border-radius: var(--border-radius-md); font-size: 14px; font-weight: 500; margin-top: 12px; }
+
+/* Rules */
+.rule-list { display: flex; flex-direction: column; gap: 8px; }
+.rule-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: var(--card); border: 0.5px solid var(--border); border-radius: var(--border-radius-md); }
+.rule-num { width: 24px; height: 24px; border-radius: 50%; background: #00d4a1; color: #003d2e; font-size: 12px; font-weight: 500; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.rule-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.rule-text strong { color: var(--text); font-weight: 500; }
+
+/* Quiz */
+.quiz-q { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 16px; line-height: 1.5; }
+.quiz-opts { display: flex; flex-direction: column; gap: 8px; }
+.quiz-opt { padding: 12px 16px; border: 0.5px solid var(--border); border-radius: var(--border-radius-md); cursor: pointer; font-size: 13px; color: var(--text); background: var(--card); transition: all 0.15s; text-align: left; }
+.quiz-opt:hover { border-color: #00d4a1; }
+.quiz-opt.correct { background: #eaf3de; border-color: #639922; color: #3b6d11; }
+.quiz-opt.wrong { background: #fcebeb; border-color: #e24b4a; color: #a32d2d; }
+.quiz-fb { margin-top: 12px; padding: 12px; border-radius: var(--border-radius-md); font-size: 13px; display: none; }
+.quiz-fb.show { display: block; }
+.quiz-fb.ok { background: #eaf3de; color: #3b6d11; }
+.quiz-fb.no { background: #fcebeb; color: #a32d2d; }
+.quiz-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+.quiz-prog { font-size: 12px; color: var(--muted); }
+.btn-next { padding: 8px 20px; background: #00d4a1; border: none; border-radius: var(--border-radius-md); color: #003d2e; font-size: 13px; font-weight: 500; cursor: pointer; display: none; }
+.btn-next.show { display: block; }
+.score-summary { text-align: center; padding: 2rem 0; }
+.score-big { font-size: 48px; font-weight: 500; color: #00d4a1; }
+.score-msg { font-size: 15px; color: var(--muted); margin-top: 8px; }
+.btn-restart { padding: 10px 24px; background: #00d4a1; border: none; border-radius: var(--border-radius-md); color: #003d2e; font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 16px; }
+
+/* Glossary */
+.gloss-search { width: 100%; padding: 10px 14px; border: 0.5px solid var(--border); border-radius: var(--border-radius-md); background: var(--card); color: var(--text); font-size: 14px; margin-bottom: 14px; }
+.gloss-item { padding: 12px 0; border-bottom: 0.5px solid var(--border); }
+.gloss-term { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+.gloss-def { font-size: 13px; color: var(--muted); line-height: 1.6; }
+</style>
+
+<div class="app">
+  <h2 class="sr-only">Aplikasi Belajar Scalping & Indikator Teknikal</h2>
+  <div class="header">
+    <h1><i class="ti ti-chart-candle" aria-hidden="true"></i> Trading Academy <span class="badge">Scalper</span></h1>
+    <p>Panduan interaktif indikator teknikal untuk scalping saham IDX</p>
+  </div>
+
+  <div class="nav">
+    <button class="nav-btn active" onclick="showPage('indikator')"><i class="ti ti-chart-line" aria-hidden="true"></i> Indikator</button>
+    <button class="nav-btn" onclick="showPage('kombinator')"><i class="ti ti-layers-intersect" aria-hidden="true"></i> Signal Kombinator</button>
+    <button class="nav-btn" onclick="showPage('rules')"><i class="ti ti-list-check" aria-hidden="true"></i> Golden Rules</button>
+    <button class="nav-btn" onclick="showPage('quiz')"><i class="ti ti-brain" aria-hidden="true"></i> Quiz</button>
+    <button class="nav-btn" onclick="showPage('glossary')"><i class="ti ti-book" aria-hidden="true"></i> Glosarium</button>
+  </div>
+
+  <!-- PAGE: INDIKATOR -->
+  <div class="page active" id="page-indikator">
+    <div class="ind-grid">
+      <div class="ind-card active" onclick="showInd('rsi')">
+        <div class="ind-icon" style="background:#eaf3de"><i class="ti ti-activity" style="color:#3b6d11" aria-hidden="true"></i></div>
+        <div class="label">Indikator 1</div>
+        <div class="name">RSI</div>
+        <div class="desc">Relative Strength Index</div>
+      </div>
+      <div class="ind-card" onclick="showInd('macd')">
+        <div class="ind-icon" style="background:#e6f1fb"><i class="ti ti-wave-sine" style="color:#185fa5" aria-hidden="true"></i></div>
+        <div class="label">Indikator 2</div>
+        <div class="name">MACD</div>
+        <div class="desc">Moving Avg Convergence Div.</div>
+      </div>
+      <div class="ind-card" onclick="showInd('supertrend')">
+        <div class="ind-icon" style="background:#faeeda"><i class="ti ti-trending-up" style="color:#854f0b" aria-hidden="true"></i></div>
+        <div class="label">Indikator 3</div>
+        <div class="name">SuperTrend</div>
+        <div class="desc">Deteksi arah trend</div>
+      </div>
+      <div class="ind-card" onclick="showInd('ma')">
+        <div class="ind-icon" style="background:#eeedfe"><i class="ti ti-chart-dots" style="color:#534ab7" aria-hidden="true"></i></div>
+        <div class="label">Indikator 4</div>
+        <div class="name">Moving Average</div>
+        <div class="desc">EMA 9 / 21 / 50</div>
+      </div>
+      <div class="ind-card" onclick="showInd('bb')">
+        <div class="ind-icon" style="background:#fbeaf0"><i class="ti ti-arrows-horizontal" style="color:#993556" aria-hidden="true"></i></div>
+        <div class="label">Indikator 5</div>
+        <div class="name">Bollinger Bands</div>
+        <div class="desc">Upper / Middle / Lower band</div>
+      </div>
+      <div class="ind-card" onclick="showInd('volume')">
+        <div class="ind-icon" style="background:#e1f5ee"><i class="ti ti-chart-bar" style="color:#0f6e56" aria-hidden="true"></i></div>
+        <div class="label">Indikator 6</div>
+        <div class="name">Volume</div>
+        <div class="desc">Konfirmasi kekuatan harga</div>
+      </div>
+    </div>
+
+    <!-- RSI Detail -->
+    <div class="detail-panel" id="ind-rsi">
+      <div class="detail-title">RSI — Relative Strength Index</div>
+      <div class="detail-sub">Mengukur kecepatan dan kekuatan perubahan harga. Skala 0–100.</div>
+      <div style="margin-bottom:12px">
+        <div class="rsi-val-display" id="rsi-val">50</div>
+        <div class="rsi-status" id="rsi-status"><span class="pill pill-yellow">Netral</span></div>
+        <div class="rsi-bar-wrap">
+          <div class="rsi-bar-bg">
+            <div class="rsi-seg" style="width:30%;background:#eaf3de;color:#3b6d11">Oversold<br>0–30</div>
+            <div class="rsi-seg" style="width:40%;background:#faeeda;color:#854f0b">Netral<br>30–70</div>
+            <div class="rsi-seg" style="width:30%;background:#fcebeb;color:#a32d2d">Overbought<br>70–100</div>
+          </div>
+          <div class="rsi-needle" id="rsi-needle" style="left:50%"></div>
+        </div>
+        <input type="range" min="0" max="100" value="50" id="rsi-slider" oninput="updateRSI(this.value)">
+        <div class="slider-label"><span>0</span><span>30</span><span>70</span><span>100</span></div>
+      </div>
+      <div class="signal-grid">
+        <div class="signal-box signal-buy">
+          <div class="stitle"><i class="ti ti-arrow-up" aria-hidden="true"></i> Sinyal BUY</div>
+          <ul>
+            <li>RSI turun ke bawah 30</li>
+            <li>Lalu naik balik ke atas 30</li>
+            <li>TP saat RSI di 50–60</li>
+          </ul>
+        </div>
+        <div class="signal-box signal-sell">
+          <div class="stitle"><i class="ti ti-arrow-down" aria-hidden="true"></i> Sinyal SELL</div>
+          <ul>
+            <li>RSI naik ke atas 70</li>
+            <li>Lalu turun ke bawah 70</li>
+            <li>TP saat RSI di 50</li>
+          </ul>
+        </div>
+      </div>
+      <table class="zones-table">
+        <tr><th>Nilai RSI</th><th>Kondisi</th><th>Aksi</th></tr>
+        <tr><td>0–30</td><td><span class="pill pill-green">Oversold</span></td><td>Siap-siap BUY</td></tr>
+        <tr><td>30–50</td><td><span class="pill pill-yellow">Lemah</span></td><td>Hati-hati</td></tr>
+        <tr><td>50–70</td><td><span class="pill pill-blue">Kuat</span></td><td>Trend naik</td></tr>
+        <tr><td>70–100</td><td><span class="pill pill-red">Overbought</span></td><td>Siap-siap SELL</td></tr>
+      </table>
+      <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px;font-size:13px;color:var(--muted)"><i class="ti ti-alert-triangle" style="color:#ba7517" aria-hidden="true"></i> Di trend kuat, RSI bisa stuck di oversold/overbought lama. Jangan entry hanya dari RSI saja!</div>
+    </div>
+
+    <!-- MACD Detail -->
+    <div class="detail-panel" id="ind-macd" style="display:none">
+      <div class="detail-title">MACD — Moving Average Convergence Divergence</div>
+      <div class="detail-sub">Mengukur perbedaan antara 2 EMA untuk deteksi momentum dan perubahan trend.</div>
+      <div class="macd-vis">
+        <div class="macd-lines">
+          <div class="macd-stat">MACD Line: <span id="macd-line-val" style="color:#4f8ef7">0.00</span></div>
+          <div class="macd-stat">Signal: <span id="macd-sig-val" style="color:#ff6b35">0.00</span></div>
+          <div class="macd-stat">Histogram: <span id="macd-hist-val">0.00</span></div>
+        </div>
+        <div class="hist-bars" id="macd-bars"></div>
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:13px;color:var(--muted)">Geser untuk simulasi MACD Histogram:</label>
+        <input type="range" min="-20" max="20" value="0" id="macd-slider" oninput="updateMACD(this.value)" style="margin-top:8px">
+        <div class="slider-label"><span>Bearish kuat</span><span>Netral</span><span>Bullish kuat</span></div>
+      </div>
+      <div class="signal-grid">
+        <div class="signal-box signal-buy">
+          <div class="stitle"><i class="ti ti-trending-up" aria-hidden="true"></i> Golden Cross</div>
+          <ul>
+            <li>MACD memotong ke atas Signal</li>
+            <li>Histogram hijau mulai muncul</li>
+            <li>Sinyal BUY</li>
+          </ul>
+        </div>
+        <div class="signal-box signal-sell">
+          <div class="stitle"><i class="ti ti-trending-down" aria-hidden="true"></i> Death Cross</div>
+          <ul>
+            <li>MACD memotong ke bawah Signal</li>
+            <li>Histogram merah mulai muncul</li>
+            <li>Sinyal SELL/CUT</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SuperTrend Detail -->
+    <div class="detail-panel" id="ind-supertrend" style="display:none">
+      <div class="detail-title">SuperTrend</div>
+      <div class="detail-sub">Garis di atas/bawah harga yang menunjukkan arah trend dengan jelas.</div>
+      <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:16px;margin:16px 0">
+        <div style="display:flex;gap:16px;margin-bottom:16px">
+          <button onclick="setSTrend('up')" id="st-up-btn" style="flex:1;padding:10px;border-radius:var(--border-radius-md);border:1.5px solid #639922;background:#eaf3de;color:#3b6d11;font-weight:500;cursor:pointer;font-size:13px">Garis HIJAU (Uptrend)</button>
+          <button onclick="setSTrend('down')" id="st-down-btn" style="flex:1;padding:10px;border-radius:var(--border-radius-md);border:0.5px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;font-size:13px">Garis MERAH (Downtrend)</button>
+        </div>
+        <svg id="st-svg" viewBox="0 0 400 120" style="width:100%;height:120px">
+          <text x="10" y="20" font-size="11" fill="#888">Harga</text>
+          <polyline id="st-price" points="20,90 60,70 100,60 140,50 180,55 220,45 260,40 300,35 340,30 380,25" stroke="#4f8ef7" stroke-width="2" fill="none"/>
+          <polyline id="st-line" points="20,100 60,100 100,100 140,100 180,100 220,100 260,100 300,100 340,100 380,100" stroke="#00d4a1" stroke-width="2" fill="none" stroke-dasharray="4,2"/>
+          <text id="st-label" x="320" y="115" font-size="11" fill="#00d4a1">SuperTrend (bawah = uptrend)</text>
+        </svg>
+        <div id="st-verdict" style="text-align:center;font-size:14px;font-weight:500;color:#3b6d11;margin-top:8px">Garis HIJAU di bawah harga = UPTREND. Boleh BUY!</div>
+      </div>
+      <div class="signal-grid">
+        <div class="signal-box signal-buy">
+          <div class="stitle"><i class="ti ti-arrow-up" aria-hidden="true"></i> Uptrend</div>
+          <ul>
+            <li>Garis hijau di bawah harga</li>
+            <li>Harga potong garis ke atas</li>
+            <li>Entry BUY konfiden</li>
+          </ul>
+        </div>
+        <div class="signal-box signal-sell">
+          <div class="stitle"><i class="ti ti-arrow-down" aria-hidden="true"></i> Downtrend</div>
+          <ul>
+            <li>Garis merah di atas harga</li>
+            <li>Harga potong garis ke bawah</li>
+            <li>Hindari buy, siap cut</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- MA Detail -->
+    <div class="detail-panel" id="ind-ma" style="display:none">
+      <div class="detail-title">Moving Average (EMA)</div>
+      <div class="detail-sub">Rata-rata harga dalam periode tertentu. EMA lebih responsif, cocok untuk scalping.</div>
+      <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:14px;margin:16px 0">
+        <svg viewBox="0 0 400 130" style="width:100%;height:130px">
+          <text x="10" y="15" font-size="11" fill="#888">Contoh EMA 9/21/50</text>
+          <polyline points="20,100 60,85 100,70 140,55 180,45 220,40 260,35 300,28 340,22 380,18" stroke="#4f8ef7" stroke-width="1.5" fill="none"/>
+          <text x="382" y="20" font-size="10" fill="#4f8ef7">Harga</text>
+          <polyline points="20,108 60,95 100,82 140,68 180,60 220,54 260,48 300,42 340,36 380,30" stroke="#00d4a1" stroke-width="2" fill="none"/>
+          <text x="382" y="32" font-size="10" fill="#00d4a1">EMA 9</text>
+          <polyline points="20,112 60,102 100,93 140,82 180,75 220,68 260,62 300,56 340,50 380,44" stroke="#ff6b35" stroke-width="2" fill="none"/>
+          <text x="382" y="46" font-size="10" fill="#ff6b35">EMA 21</text>
+          <polyline points="20,118 60,112 100,108 140,103 180,99 220,95 260,90 300,85 340,80 380,76" stroke="#888" stroke-width="1.5" fill="none" stroke-dasharray="3,2"/>
+          <text x="382" y="78" font-size="10" fill="#888">EMA 50</text>
+          <circle cx="220" cy="54" r="4" fill="none" stroke="#00d4a1" stroke-width="2"/>
+          <circle cx="220" cy="68" r="4" fill="none" stroke="#ff6b35" stroke-width="2"/>
+          <line x1="220" y1="54" x2="220" y2="110" stroke="#00d4a1" stroke-width="1" stroke-dasharray="2,2"/>
+          <text x="195" y="125" font-size="10" fill="#00d4a1">Golden Cross</text>
+        </svg>
+      </div>
+      <table class="zones-table">
+        <tr><th>Setup</th><th>Sinyal</th><th>Aksi</th></tr>
+        <tr><td>EMA 9 potong ke atas EMA 21</td><td><span class="pill pill-green">Golden Cross</span></td><td>BUY</td></tr>
+        <tr><td>EMA 9 potong ke bawah EMA 21</td><td><span class="pill pill-red">Death Cross</span></td><td>SELL/CUT</td></tr>
+        <tr><td>Harga di atas EMA 50</td><td><span class="pill pill-blue">Bullish Zone</span></td><td>Prioritas Buy</td></tr>
+        <tr><td>Harga di bawah EMA 50</td><td><span class="pill pill-yellow">Bearish Zone</span></td><td>Hati-hati</td></tr>
+      </table>
+    </div>
+
+    <!-- BB Detail -->
+    <div class="detail-panel" id="ind-bb" style="display:none">
+      <div class="detail-title">Bollinger Bands</div>
+      <div class="detail-sub">3 garis (Upper, Middle, Lower) yang membentuk "pita" di sekitar harga.</div>
+      <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:14px;margin:16px 0">
+        <div style="margin-bottom:10px">
+          <label style="font-size:12px;color:var(--muted)">Posisi harga di dalam Bollinger Bands:</label>
+          <input type="range" min="0" max="100" value="50" id="bb-slider" oninput="updateBB(this.value)" style="margin-top:6px">
+        </div>
+        <svg id="bb-svg" viewBox="0 0 400 100" style="width:100%;height:100px">
+          <rect x="0" y="0" width="400" height="100" fill="transparent"/>
+          <path d="M 0 15 Q 100 10 200 15 Q 300 20 400 15" stroke="#f09595" stroke-width="1.5" fill="none" stroke-dasharray="3,2"/>
+          <path d="M 0 50 Q 100 48 200 50 Q 300 52 400 50" stroke="#888" stroke-width="1.5" fill="none"/>
+          <path d="M 0 85 Q 100 90 200 85 Q 300 80 400 85" stroke="#85b7eb" stroke-width="1.5" fill="none" stroke-dasharray="3,2"/>
+          <text x="4" y="12" font-size="10" fill="#a32d2d">Upper Band (resistance)</text>
+          <text x="4" y="47" font-size="10" fill="#888">Middle Band (SMA 20)</text>
+          <text x="4" y="99" font-size="10" fill="#185fa5">Lower Band (support)</text>
+          <circle id="bb-dot" cx="200" cy="50" r="5" fill="#00d4a1"/>
+          <text id="bb-txt" x="210" y="54" font-size="11" fill="#00d4a1">Netral</text>
+        </svg>
+        <div id="bb-status" style="text-align:center;font-size:13px;color:var(--muted);margin-top:6px">Harga di Middle Band — zona netral</div>
+      </div>
+      <div class="signal-grid">
+        <div class="signal-box signal-buy">
+          <div class="stitle"><i class="ti ti-arrow-up" aria-hidden="true"></i> BUY Setup</div>
+          <ul>
+            <li>Harga menyentuh Lower Band</li>
+            <li>RSI juga oversold</li>
+            <li>TP di Middle Band</li>
+          </ul>
+        </div>
+        <div class="signal-box signal-sell">
+          <div class="stitle"><i class="ti ti-arrow-down" aria-hidden="true"></i> SELL Setup</div>
+          <ul>
+            <li>Harga menyentuh Upper Band</li>
+            <li>RSI juga overbought</li>
+            <li>TP di Middle Band</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Volume Detail -->
+    <div class="detail-panel" id="ind-volume" style="display:none">
+      <div class="detail-title">Volume</div>
+      <div class="detail-sub">Jumlah saham yang diperdagangkan. Indikator paling jujur — tidak bisa dimanipulasi.</div>
+      <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:14px;margin:16px 0">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <button onclick="setVol('high-up')" style="padding:8px;border-radius:var(--border-radius-md);border:0.5px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:12px">Volume Tinggi + Harga Naik</button>
+          <button onclick="setVol('high-down')" style="padding:8px;border-radius:var(--border-radius-md);border:0.5px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:12px">Volume Tinggi + Harga Turun</button>
+          <button onclick="setVol('low-up')" style="padding:8px;border-radius:var(--border-radius-md);border:0.5px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:12px">Volume Rendah + Harga Naik</button>
+          <button onclick="setVol('low-down')" style="padding:8px;border-radius:var(--border-radius-md);border:0.5px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:12px">Volume Rendah + Harga Turun</button>
+        </div>
+        <div id="vol-result" style="padding:12px;background:var(--card);border-radius:var(--border-radius-md);font-size:13px;color:var(--muted);text-align:center">Klik salah satu skenario di atas</div>
+      </div>
+      <table class="zones-table">
+        <tr><th>Volume</th><th>Harga</th><th>Interpretasi</th></tr>
+        <tr><td>Tinggi</td><td>Naik</td><td><span class="pill pill-green">Valid, buyer kuat</span></td></tr>
+        <tr><td>Tinggi</td><td>Turun</td><td><span class="pill pill-red">Valid, seller kuat</span></td></tr>
+        <tr><td>Rendah</td><td>Naik</td><td><span class="pill pill-yellow">Fake pump, hati-hati</span></td></tr>
+        <tr><td>Rendah</td><td>Turun</td><td><span class="pill pill-blue">Penurunan lemah</span></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- PAGE: KOMBINATOR -->
+  <div class="page" id="page-kombinator">
+    <div class="detail-panel">
+      <div class="detail-title">Signal Kombinator</div>
+      <div class="detail-sub">Centang kondisi yang terpenuhi. Minimal 3-4 sinyal untuk entry yang valid.</div>
+      <div class="combo-grid" id="combo-grid">
+        <div class="combo-item"><label><input type="checkbox" onchange="updateScore()"> SuperTrend HIJAU (uptrend)</label></div>
+        <div class="combo-item"><label><input type="checkbox" onchange="updateScore()"> MACD Golden Cross</label></div>
+        <div class="combo-item"><label><input type="checkbox" onchange="updateScore()"> RSI naik dari bawah 30</label></div>
+        <div class="combo-item"><label><input type="checkbox" onchange="updateScore()"> Harga bounce dari Lower BB</label></div>
+        <div class="combo-item"><label><input type="checkbox" onchange="updateScore()"> EMA 9 cross ke atas EMA 21</label></div>
+        <div class="combo-item"><label><input type="checkbox" onchange="updateScore()"> Volume naik saat harga naik</label></div>
+        <div class="combo-item"><label><input type="checkbox" onchange="updateScore()"> RSI di atas 40 dan naik</label></div>
+        <div class="combo-item"><label><input type="checkbox" onchange="updateScore()"> MACD Histogram mengecil</label></div>
+      </div>
+      <div style="margin-top:16px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+          <div class="score-text" id="score-text">0/8</div>
+          <div class="score-label" id="score-label">Belum ada sinyal</div>
+        </div>
+        <div class="score-bar"><div class="score-fill" id="score-fill" style="width:0%;background:#e24b4a"></div></div>
+        <div id="verdict" class="verdict" style="background:var(--color-background-secondary);color:var(--muted)">Centang kondisi yang terpenuhi untuk melihat rekomendasi entry.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: RULES -->
+  <div class="page" id="page-rules">
+    <div class="detail-panel">
+      <div class="detail-title" style="margin-bottom:16px">7 Golden Rules Scalping</div>
+      <div class="rule-list">
+        <div class="rule-item"><div class="rule-num">1</div><div class="rule-text"><strong>Jangan lawan trend besar</strong> — Trend daily tetap raja. Kalau daily bearish, scalping di 5m tetap berisiko tinggi.</div></div>
+        <div class="rule-item"><div class="rule-num">2</div><div class="rule-text"><strong>Minimal 3 indikator konfirmasi</strong> — Jangan entry hanya dari 1 sinyal. Semakin banyak konfirmasi, semakin valid entry lo.</div></div>
+        <div class="rule-item"><div class="rule-num">3</div><div class="rule-text"><strong>Selalu pasang LS sebelum entry</strong> — Bukan sesudah. Stop loss adalah pelindung modal lo. Tanpa LS = judi.</div></div>
+        <div class="rule-item"><div class="rule-num">4</div><div class="rule-text"><strong>R/R minimal 1:2</strong> — Profit harus 2x dari risk. Kalau LS 3 poin, TP minimal 6 poin. Tanpa ini, profit bisa habis oleh satu cut loss.</div></div>
+        <div class="rule-item"><div class="rule-num">5</div><div class="rule-text"><strong>Jangan revenge trading</strong> — Setelah kena cut loss, istirahat dulu. Trading sambil emosi = kesalahan berlipat ganda.</div></div>
+        <div class="rule-item"><div class="rule-num">6</div><div class="rule-text"><strong>Jam terbaik scalping IDX</strong> — Pagi: 09:00–10:30 (opening, volume tinggi). Siang: 13:30–14:30 (re-opening). Hindari 11:30–13:00.</div></div>
+        <div class="rule-item"><div class="rule-num">7</div><div class="rule-text"><strong>Volume adalah raja</strong> — Jangan entry tanpa konfirmasi volume. Harga naik tanpa volume = jebakan. Volume = kekuatan sesungguhnya.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: QUIZ -->
+  <div class="page" id="page-quiz">
+    <div class="detail-panel">
+      <div id="quiz-container"></div>
+    </div>
+  </div>
+
+  <!-- PAGE: GLOSSARY -->
+  <div class="page" id="page-glossary">
+    <div class="detail-panel">
+      <div class="detail-title" style="margin-bottom:12px">Glosarium Trading</div>
+      <input class="gloss-search" id="gloss-search" placeholder="Cari istilah..." oninput="filterGloss(this.value)">
+      <div id="gloss-list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  event.target.classList.add('active');
+  if (p === 'quiz') initQuiz();
+  if (p === 'glossary') initGloss();
+}
+
+function showInd(id) {
+  document.querySelectorAll('.detail-panel').forEach(x => x.style.display = 'none');
+  document.getElementById('ind-' + id).style.display = 'block';
+  document.querySelectorAll('.ind-card').forEach(x => x.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+}
+
+function updateRSI(v) {
+  v = parseInt(v);
+  document.getElementById('rsi-val').textContent = v;
+  const needle = document.getElementById('rsi-needle');
+  needle.style.left = v + '%';
+  const status = document.getElementById('rsi-status');
+  if (v < 30) {
+    status.innerHTML = '<span class="pill pill-green">Oversold — Potensi BUY</span>';
+    document.getElementById('rsi-val').style.color = '#3b6d11';
+  } else if (v > 70) {
+    status.innerHTML = '<span class="pill pill-red">Overbought — Potensi SELL</span>';
+    document.getElementById('rsi-val').style.color = '#a32d2d';
+  } else if (v >= 50) {
+    status.innerHTML = '<span class="pill pill-blue">Zona Kuat — Trend Naik</span>';
+    document.getElementById('rsi-val').style.color = '#185fa5';
+  } else {
+    status.innerHTML = '<span class="pill pill-yellow">Zona Lemah — Hati-hati</span>';
+    document.getElementById('rsi-val').style.color = '#854f0b';
+  }
+}
+
+function updateMACD(v) {
+  v = parseFloat(v);
+  const macdLine = (v * 0.6).toFixed(2);
+  const sigLine = (v * 0.4).toFixed(2);
+  document.getElementById('macd-line-val').textContent = macdLine;
+  document.getElementById('macd-sig-val').textContent = sigLine;
+  document.getElementById('macd-hist-val').textContent = v.toFixed(2);
+  document.getElementById('macd-hist-val').style.color = v >= 0 ? '#3b6d11' : '#a32d2d';
+  const bars = document.getElementById('macd-bars');
+  bars.innerHTML = '';
+  const vals = [];
+  for (let i = 0; i < 12; i++) {
+    const noise = (Math.sin(i * 1.3) * 5);
+    vals.push(v + noise);
+  }
+  const max = Math.max(...vals.map(Math.abs), 1);
+  vals.forEach(bv => {
+    const bar = document.createElement('div');
+    bar.className = 'hist-bar';
+    const pct = Math.abs(bv) / max * 55;
+    bar.style.height = Math.max(pct, 2) + 'px';
+    bar.style.background = bv >= 0 ? '#3b6d11' : '#a32d2d';
+    bar.style.opacity = '0.8';
+    bars.appendChild(bar);
+  });
+}
+
+let stMode = 'up';
+function setSTrend(mode) {
+  stMode = mode;
+  const svg = document.getElementById('st-svg');
+  const stLine = document.getElementById('st-line');
+  const stLabel = document.getElementById('st-label');
+  const verdict = document.getElementById('st-verdict');
+  const upBtn = document.getElementById('st-up-btn');
+  const downBtn = document.getElementById('st-down-btn');
+  if (mode === 'up') {
+    stLine.setAttribute('points', '20,100 60,98 100,96 140,94 180,92 220,90 260,88 300,86 340,84 380,82');
+    stLine.setAttribute('stroke', '#00d4a1');
+    stLabel.setAttribute('fill', '#00d4a1');
+    stLabel.textContent = 'SuperTrend (bawah = uptrend)';
+    verdict.textContent = 'Garis HIJAU di bawah harga = UPTREND. Boleh BUY!';
+    verdict.style.color = '#3b6d11';
+    upBtn.style.background = '#eaf3de'; upBtn.style.borderColor = '#639922'; upBtn.style.borderWidth = '1.5px'; upBtn.style.color = '#3b6d11'; upBtn.style.fontWeight = '500';
+    downBtn.style.background = 'var(--card)'; downBtn.style.borderColor = 'var(--border)'; downBtn.style.borderWidth = '0.5px'; downBtn.style.color = 'var(--muted)'; downBtn.style.fontWeight = 'normal';
+  } else {
+    stLine.setAttribute('points', '20,10 60,12 100,14 140,16 180,18 220,20 260,22 300,24 340,26 380,28');
+    stLine.setAttribute('stroke', '#e24b4a');
+    stLabel.setAttribute('fill', '#e24b4a');
+    stLabel.textContent = 'SuperTrend (atas = downtrend)';
+    verdict.textContent = 'Garis MERAH di atas harga = DOWNTREND. Hindari BUY!';
+    verdict.style.color = '#a32d2d';
+    downBtn.style.background = '#fcebeb'; downBtn.style.borderColor = '#e24b4a'; downBtn.style.borderWidth = '1.5px'; downBtn.style.color = '#a32d2d'; downBtn.style.fontWeight = '500';
+    upBtn.style.background = 'var(--card)'; upBtn.style.borderColor = 'var(--border)'; upBtn.style.borderWidth = '0.5px'; upBtn.style.color = 'var(--muted)'; upBtn.style.fontWeight = 'normal';
+  }
+}
+
+function updateBB(v) {
+  v = parseInt(v);
+  const dot = document.getElementById('bb-dot');
+  const txt = document.getElementById('bb-txt');
+  const status = document.getElementById('bb-status');
+  const y = 85 - (v / 100) * 70;
+  dot.setAttribute('cy', y);
+  dot.setAttribute('cx', '200');
+  if (v <= 15) {
+    dot.setAttribute('fill', '#185fa5');
+    txt.setAttribute('fill', '#185fa5');
+    txt.textContent = 'Lower Band!';
+    status.textContent = 'Harga di Lower Band — potensi BUY jika RSI juga oversold';
+    status.style.color = '#185fa5';
+  } else if (v >= 85) {
+    dot.setAttribute('fill', '#a32d2d');
+    txt.setAttribute('fill', '#a32d2d');
+    txt.textContent = 'Upper Band!';
+    status.textContent = 'Harga di Upper Band — potensi SELL jika RSI juga overbought';
+    status.style.color = '#a32d2d';
+  } else if (v >= 45 && v <= 55) {
+    dot.setAttribute('fill', '#888');
+    txt.setAttribute('fill', '#888');
+    txt.textContent = 'Middle Band';
+    status.textContent = 'Harga di Middle Band — zona netral, tunggu arah';
+    status.style.color = 'var(--muted)';
+  } else if (v > 55) {
+    dot.setAttribute('fill', '#e24b4a');
+    txt.setAttribute('fill', '#e24b4a');
+    txt.textContent = 'Mendekati Upper';
+    status.textContent = 'Harga mendekati Upper Band — mulai waspada';
+    status.style.color = '#a32d2d';
+  } else {
+    dot.setAttribute('fill', '#4f8ef7');
+    txt.setAttribute('fill', '#4f8ef7');
+    txt.textContent = 'Mendekati Lower';
+    status.textContent = 'Harga mendekati Lower Band — mulai perhatikan reversal';
+    status.style.color = '#185fa5';
+  }
+  txt.setAttribute('x', '212');
+  txt.setAttribute('y', y + 4);
+}
+
+const volResults = {
+  'high-up': { text: 'Volume Tinggi + Harga Naik = Kenaikan VALID. Buyer kuat masuk. Bisa follow BUY dengan konfiden!', bg: '#eaf3de', color: '#3b6d11' },
+  'high-down': { text: 'Volume Tinggi + Harga Turun = Penurunan VALID. Seller dominan. HINDARI beli, tunggu dulu!', bg: '#fcebeb', color: '#a32d2d' },
+  'low-up': { text: 'Volume Rendah + Harga Naik = Kemungkinan FAKE PUMP. Tidak valid. Big player tidak masuk. Hati-hati jebakan!', bg: '#faeeda', color: '#854f0b' },
+  'low-down': { text: 'Volume Rendah + Harga Turun = Penurunan lemah, tidak banyak yang jual. Bisa jadi sinyal awal akumulasi.', bg: '#e6f1fb', color: '#185fa5' }
+};
+function setVol(k) {
+  const r = volResults[k];
+  const el = document.getElementById('vol-result');
+  el.textContent = r.text;
+  el.style.background = r.bg;
+  el.style.color = r.color;
+}
+
+function updateScore() {
+  const checks = document.querySelectorAll('#combo-grid input[type=checkbox]');
+  let count = 0;
+  checks.forEach(c => { if (c.checked) count++; });
+  const total = checks.length;
+  const pct = (count / total) * 100;
+  document.getElementById('score-text').textContent = count + '/' + total;
+  const fill = document.getElementById('score-fill');
+  fill.style.width = pct + '%';
+  const verdict = document.getElementById('verdict');
+  if (count === 0) {
+    fill.style.background = '#e24b4a';
+    document.getElementById('score-label').textContent = 'Belum ada sinyal';
+    verdict.style.background = 'var(--color-background-secondary)';
+    verdict.style.color = 'var(--muted)';
+    verdict.textContent = 'Centang kondisi yang terpenuhi untuk melihat rekomendasi entry.';
+  } else if (count <= 2) {
+    fill.style.background = '#e24b4a';
+    document.getElementById('score-label').textContent = 'Sinyal lemah';
+    verdict.style.background = '#fcebeb';
+    verdict.style.color = '#a32d2d';
+    verdict.textContent = 'Sinyal terlalu lemah. JANGAN entry! Tunggu lebih banyak konfirmasi.';
+  } else if (count === 3) {
+    fill.style.background = '#ef9f27';
+    document.getElementById('score-label').textContent = 'Cukup, tapi hati-hati';
+    verdict.style.background = '#faeeda';
+    verdict.style.color = '#854f0b';
+    verdict.textContent = 'Minimum sinyal terpenuhi. Bisa entry dengan lot kecil dan LS ketat.';
+  } else if (count <= 5) {
+    fill.style.background = '#00d4a1';
+    document.getElementById('score-label').textContent = 'Setup cukup kuat';
+    verdict.style.background = '#eaf3de';
+    verdict.style.color = '#3b6d11';
+    verdict.textContent = 'Setup cukup kuat! Bisa entry dengan manajemen risiko normal. Pasang LS dan TP sebelum buy.';
+  } else {
+    fill.style.background = '#00d4a1';
+    document.getElementById('score-label').textContent = 'Setup sangat kuat!';
+    verdict.style.background = '#eaf3de';
+    verdict.style.color = '#3b6d11';
+    verdict.textContent = 'Setup SANGAT KUAT! Semua indikator align. Entry dengan konfiden, tapi tetap pasang LS!';
+  }
+}
+
+const quizData = [
+  { q: 'RSI saham BUMI berada di angka 28. Apa artinya?', opts: ['Harga terlalu tinggi, siap turun', 'Harga oversold, potensi rebound', 'Trend naik kuat', 'MACD golden cross'], ans: 1, fb: 'RSI di bawah 30 = Oversold. Artinya harga sudah turun terlalu jauh dan berpotensi rebound. Tapi tunggu konfirmasi RSI naik balik ke atas 30 dulu ya!' },
+  { q: 'SuperTrend menampilkan garis MERAH di atas harga. Apa keputusan yang tepat?', opts: ['Langsung BUY banyak-banyak', 'Hindari BUY, trend sedang turun', 'Pasang TP di bawah harga entry', 'RSI pasti oversold'], ans: 1, fb: 'Garis SuperTrend merah di atas harga = DOWNTREND. Hindari buy! Tunggu garis berubah hijau (di bawah harga) sebelum entry.' },
+  { q: 'MACD Line memotong ke atas Signal Line. Ini disebut...', opts: ['Death Cross', 'Bearish Divergence', 'Golden Cross', 'BB Squeeze'], ans: 2, fb: 'Golden Cross = MACD Line memotong ke atas Signal Line. Ini sinyal bullish / BUY. Sebaliknya, Death Cross = MACD turun memotong ke bawah Signal = SELL.' },
+  { q: 'Volume naik 3x dari biasanya tapi harga justru turun. Apa interpretasinya?', opts: ['Fake pump, jangan percaya', 'Penurunan valid, seller dominan — HINDARI beli', 'Saatnya averaging down', 'Golden Cross akan segera terjadi'], ans: 1, fb: 'Volume tinggi + harga turun = penurunan VALID. Big player sedang jual besar-besaran. Ini bukan saat yang tepat untuk beli!' },
+  { q: 'Harga menyentuh Lower Bollinger Band dan RSI di 27. Setup ini adalah...', opts: ['Sinyal jual kuat', 'Tidak ada artinya', 'Potensi BUY setup yang kuat', 'Konfirmasi downtrend'], ans: 2, fb: 'Lower BB + RSI oversold = kombinasi BUY setup yang kuat! Dua indikator menunjukkan hal yang sama = konfirmasi lebih valid. Tetap tunggu candle bullish dulu ya.' },
+  { q: 'Berapa R/R (Risk/Reward) minimum yang disarankan untuk scalping?', opts: ['1:0.5', '1:1', '1:2', '1:5'], ans: 2, fb: 'R/R minimum 1:2 artinya setiap Rp 1 yang kamu risiko, kamu harus target profit Rp 2. Ini penting agar meskipun kamu salah 50% trade, kamu masih bisa profit secara keseluruhan.' },
+  { q: 'EMA 9 memotong ke bawah EMA 21. Ini disebut dan berarti...', opts: ['Golden Cross — BUY', 'Death Cross — pertimbangkan SELL/CUT', 'BB Expansion — volatilitas tinggi', 'RSI Divergence'], ans: 1, fb: 'Death Cross = EMA cepat (9) memotong ke bawah EMA lambat (21). Ini sinyal bearish / momentum turun. Waktunya waspada dan siap cut posisi.' },
+  { q: 'Kapan jam terbaik untuk scalping di IDX (Bursa Efek Indonesia)?', opts: ['12:00 – 13:30 (istirahat siang)', '09:00–10:30 dan 13:30–14:30', '14:45 – 15:50 (mau tutup)', '08:00 – 09:00 (pre-market)'], ans: 1, fb: 'Jam terbaik scalping IDX: pagi 09:00–10:30 (opening dengan volume tinggi) dan siang 13:30–14:30 (setelah re-opening). Hindari 11:30–13:00 karena volume biasanya sepi.' }
+];
+
+let qIdx = 0, score = 0, answered = false;
+function initQuiz() {
+  qIdx = 0; score = 0; answered = false;
+  renderQ();
+}
+function renderQ() {
+  const c = document.getElementById('quiz-container');
+  if (qIdx >= quizData.length) {
+    const pct = Math.round((score / quizData.length) * 100);
+    let msg = pct >= 80 ? 'Luar biasa! Lo udah siap scalping!' : pct >= 60 ? 'Bagus! Terus belajar ya.' : 'Masih perlu belajar lagi. Baca ulang materinya!';
+    c.innerHTML = '<div class="score-summary"><div class="score-big">' + score + '/' + quizData.length + '</div><div class="score-msg">' + msg + ' (' + pct + '%)</div><button class="btn-restart" onclick="initQuiz()">Ulangi Quiz</button></div>';
+    return;
+  }
+  const q = quizData[qIdx];
+  c.innerHTML = '<div class="quiz-q">Pertanyaan ' + (qIdx+1) + ' dari ' + quizData.length + '<br>' + q.q + '</div><div class="quiz-opts">' + q.opts.map((o, i) => '<button class="quiz-opt" onclick="answerQ(' + i + ')">' + String.fromCharCode(65+i) + '. ' + o + '</button>').join('') + '</div><div class="quiz-fb" id="quiz-fb"></div><div class="quiz-nav"><div class="quiz-prog">' + score + ' benar dari ' + qIdx + ' soal</div><button class="btn-next" id="btn-next" onclick="nextQ()">Lanjut ></button></div>';
+}
+function answerQ(i) {
+  if (answered) return;
+  answered = true;
+  const q = quizData[qIdx];
+  const opts = document.querySelectorAll('.quiz-opt');
+  opts[i].classList.add(i === q.ans ? 'correct' : 'wrong');
+  if (i !== q.ans) opts[q.ans].classList.add('correct');
+  if (i === q.ans) score++;
+  const fb = document.getElementById('quiz-fb');
+  fb.textContent = (i === q.ans ? 'Benar! ' : 'Salah. ') + q.fb;
+  fb.className = 'quiz-fb show ' + (i === q.ans ? 'ok' : 'no');
+  document.getElementById('btn-next').classList.add('show');
+}
+function nextQ() { qIdx++; answered = false; renderQ(); }
+
+const glossData = [
+  { term: 'Scalping', def: 'Strategi trading masuk-keluar cepat (menit hingga jam) untuk ambil profit kecil tapi konsisten.' },
+  { term: 'RSI (Relative Strength Index)', def: 'Indikator momentum skala 0-100. Di bawah 30 = oversold (potensi naik), di atas 70 = overbought (potensi turun).' },
+  { term: 'MACD', def: 'Moving Average Convergence Divergence. Mengukur perbedaan EMA 12 dan EMA 26 untuk deteksi momentum.' },
+  { term: 'Golden Cross', def: 'EMA cepat memotong ke atas EMA lambat, atau MACD line memotong ke atas signal line. Sinyal bullish/BUY.' },
+  { term: 'Death Cross', def: 'EMA cepat memotong ke bawah EMA lambat. Sinyal bearish/SELL.' },
+  { term: 'SuperTrend', def: 'Indikator garis yang menunjukkan trend. Hijau di bawah harga = uptrend. Merah di atas harga = downtrend.' },
+  { term: 'Bollinger Bands', def: '3 garis (Upper, Middle, Lower) membentuk pita di sekitar harga. Harga di Lower Band = potensi reversal naik.' },
+  { term: 'EMA (Exponential Moving Average)', def: 'Rata-rata harga bergerak yang lebih responsif terhadap harga terbaru. Cocok untuk scalping.' },
+  { term: 'Oversold', def: 'Kondisi harga sudah turun terlalu jauh dan terlalu cepat. RSI di bawah 30. Potensi rebound.' },
+  { term: 'Overbought', def: 'Kondisi harga sudah naik terlalu jauh dan terlalu cepat. RSI di atas 70. Potensi koreksi.' },
+  { term: 'Stop Loss (LS)', def: 'Harga batas di mana kamu otomatis jual untuk batasi kerugian. WAJIB dipasang sebelum entry.' },
+  { term: 'Take Profit (TP)', def: 'Target harga di mana kamu jual untuk ambil profit. Tentukan sebelum entry.' },
+  { term: 'Risk/Reward (R/R)', def: 'Perbandingan antara risiko (jarak ke LS) dan potensi profit (jarak ke TP). Minimum 1:2.' },
+  { term: 'Support', def: 'Level harga di mana tekanan beli cukup kuat untuk menghentikan penurunan harga.' },
+  { term: 'Resistance', def: 'Level harga di mana tekanan jual cukup kuat untuk menghentikan kenaikan harga.' },
+  { term: 'Volume', def: 'Jumlah saham yang diperdagangkan dalam satu periode. Konfirmasi kekuatan pergerakan harga.' },
+  { term: 'Divergence', def: 'Ketika arah harga dan indikator (RSI/MACD) bergerak berlawanan. Sinyal potensi reversal.' },
+  { term: 'Averaging Down', def: 'Beli lagi di harga lebih rendah untuk turunkan rata-rata harga. BERBAHAYA di downtrend.' },
+  { term: 'Reversal', def: 'Pembalikan arah trend. Dari uptrend jadi downtrend, atau sebaliknya.' },
+  { term: 'Histogram MACD', def: 'Batang-batang yang menunjukkan selisih MACD line dan signal line. Makin besar = momentum makin kuat.' },
+  { term: 'B Avg (Average Buy)', def: 'Harga rata-rata pembelian lo. Total nilai pembelian dibagi total lot yang dimiliki.' },
+  { term: 'Cut Loss', def: 'Menjual saham yang merugi untuk menghentikan kerugian lebih besar. Tindakan disiplin, bukan kekalahan.' },
+  { term: 'Lot', def: 'Satuan pembelian saham di IDX. 1 lot = 100 lembar saham.' },
+  { term: 'Candle/Candlestick', def: 'Representasi visual pergerakan harga (Open, High, Low, Close) dalam satu periode waktu.' },
+  { term: 'Timeframe', def: 'Periode waktu setiap candle. 1m = 1 menit, 5m = 5 menit, 15m = 15 menit, 1D = 1 hari.' }
+];
+
+function initGloss() {
+  renderGloss(glossData);
+}
+function renderGloss(data) {
+  document.getElementById('gloss-list').innerHTML = data.map(g => '<div class="gloss-item"><div class="gloss-term">' + g.term + '</div><div class="gloss-def">' + g.def + '</div></div>').join('');
+}
+function filterGloss(q) {
+  const filtered = glossData.filter(g => g.term.toLowerCase().includes(q.toLowerCase()) || g.def.toLowerCase().includes(q.toLowerCase()));
+  renderGloss(filtered);
+}
+
+updateRSI(50);
+updateMACD(0);
+updateBB(50);
+document.getElementById('ind-rsi').style.display = 'block';
+</script>
